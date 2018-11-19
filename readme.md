@@ -15,7 +15,7 @@
 
 ---
 
-## 校对 🀄️
+## 校对 ✅
 
 <!-- doc-templite START generated -->
 <!-- repo = 'benhoyt/goawk' -->
@@ -31,7 +31,7 @@
 
 <!-- doc-templite END generated -->
 
-- [ ] [**详细了解 GoAWK 如何在工作和执行.**](https://benhoyt.com/writings/goawk/)
+- [x] **详细了解 GoAWK 如何在工作和执行.** [网页（还未上传，正与作者沟通）](llever.com/2018/11/19/译-goawk一个用go编写的awk解释器/) | [./goawk.zh.md](./goawk.zh.md)
 
 ### 贡献
 
