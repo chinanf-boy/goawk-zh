@@ -21,16 +21,25 @@
 <!-- repo = 'benhoyt/goawk' -->
 <!-- commit = 'a75cecd04d8aa8829c04b97bf370c8afaf53a68e' -->
 <!-- time = '2018-11-17' -->
-翻译的原文 | 与日期 | 最新更新 | 更多
----|---|---|---
-[commit] | ⏰ 2018-11-17 | ![last] | [中文翻译][translate-list]
+
+| 翻译的原文 | 与日期        | 最新更新 | 更多                       |
+| ---------- | ------------- | -------- | -------------------------- |
+| [commit]   | ⏰ 2018-11-17 | ![last]  | [中文翻译][translate-list] |
 
 [last]: https://img.shields.io/github/last-commit/benhoyt/goawk.svg
 [commit]: https://github.com/benhoyt/goawk/tree/a75cecd04d8aa8829c04b97bf370c8afaf53a68e
 
 <!-- doc-templite END generated -->
 
-- [x] **详细了解 GoAWK 如何在工作和执行.** [网页](http://llever.com/2018/11/19/译-goawk一个用go编写的awk解释器/) | [./goawk.zh.md](./goawk.zh.md)
+| **详细了解 GoAWK 如何在工作和执行.**(网页) | github                         |
+| ---------------------------------------- | ------------------------------ |
+| [原文`en`][writing] === [中文][llever]                                 | [./goawk.zh.md](./goawk.zh.md) |
+
+> [作者同意][issue]
+
+[writing]: https://benhoyt.com/writings/goawk/
+[issue]: https://github.com/benhoyt/goawk/issues/12
+[llever]: http://llever.com/2018/11/19/译-goawk一个用go编写的awk解释器/
 
 ### 贡献
 
@@ -50,7 +59,7 @@
 
 AWK 是一种引人入胜的文本处理语言,在阅读了令人愉快的[_AWK 编程语言_](https://ia802309.us.archive.org/25/items/pdfy-MgN0H1joIoDVoIC7/The_AWK_Programming_Language.pdf)简洁之后,我很高兴能在 Go 中为它写一个解释器。所以,我宣布这里是,功能完整的测试套件"一个真正的 AWK"。
 
-[**详细了解 GoAWK 如何工作和执行的.**](https://benhoyt.com/writings/goawk/)
+[**详细了解 GoAWK 如何工作和执行的.**][writing]
 
 ## 基本用法
 
