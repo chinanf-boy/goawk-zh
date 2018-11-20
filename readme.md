@@ -30,7 +30,7 @@
 
 <!-- doc-templite END generated -->
 
-- [x] **详细了解 GoAWK 如何在工作和执行.** [网页（还未上传，正与作者沟通）](http://llever.com/2018/11/19/译-goawk一个用go编写的awk解释器/) | [./goawk.zh.md](./goawk.zh.md)
+- [x] **详细了解 GoAWK 如何在工作和执行.** [网页](http://llever.com/2018/11/19/译-goawk一个用go编写的awk解释器/) | [./goawk.zh.md](./goawk.zh.md)
 
 ### 贡献
 
