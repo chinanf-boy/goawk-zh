@@ -187,9 +187,9 @@ GoAWK 在编译器设计方面并不突破。它由词法分析器(lexer)，解�
 
 ### 词法分析器
 
-这一切都始于[词法分析器](https://github.com/benhoyt/goawk/blob/master/lexer/lexer.go)，它将 AWK 源代码转换为`tokens(标记)`流。词法分析器的核心是`scan()`方法，其会跳过空格和注释，然后解析下一个`token`：例如，`DOLLAR`，`NUMBER`，或`LPAREN`。返回每个`token(标记)`及其源代码位置（行和列），以便解析器可以在语法错误消息中,包含此信息。
+这一切都始于[词法分析器](https://github.com/benhoyt/goawk/blob/master/lexer/lexer.go)，它将 AWK 源代码转换为`tokens(标记)`流。词法分析器的核心是`scan()`方法，其会跳过空格和注释，解析下一个`token`：例如，`DOLLAR`，`NUMBER`，或`LPAREN`。每个`token(标记)`都返回其源代码位置（行和列），以便解析器可以在语法错误消息中,包含此信息。
 
-大部分代码（`Lexer.scan`方法）只是一个大的 **switch** 语句，来自`token`的第一个字符。下面是一个片段：
+大部分代码（`Lexer.scan`方法）只是一个大的 **switch** 语句，用来海选`token`的第一个字符。下面是一个片段：
 
 ```go
 // ...
@@ -220,13 +220,13 @@ case '=':
 
 ```
 
-关于 AWK 语法的一个奇怪的事情是解析`/`和`/regex/`并不明确 - 你必须知道解析上下文，以知道是返回一个`DIV`还是一个`REGEX`的标记。因此，词法分析器暴露了一个针对普通标记的`Scan`和一个解析器调用正则标记时，所需的`ScanRegex`方法。
+关于 AWK 语法的一个奇怪的事情是解析`/`和`/regex/`并不明确 - 你必须知道解析中的上下文，以便知道返回的是一个`DIV`还是一个`REGEX`的标记。因此，词法分析器暴露了一个针对普通标记的`Scan`方法和一个解析器调用正则标记时，所需的`ScanRegex`方法。
 
 ### 解析器
 
-接下来是[解析器](https://github.com/benhoyt/goawk/blob/master/parser/parser.go)，一个相当标准的深度递归解析器，它创建一个[抽象语法树（AST）](https://github.com/benhoyt/goawk/blob/master/internal/ast/ast.go)。我不喜欢学习如何驱动解析器生成器，像`yacc`或引入外部依赖，所以 GoAWK 的解析器是用爱，手工制作的。
+接下来是[解析器](https://github.com/benhoyt/goawk/blob/master/parser/parser.go)，一个相当标准的深度递归解析器，它创建一个[抽象语法树（AST）](https://github.com/benhoyt/goawk/blob/master/internal/ast/ast.go)。我不喜欢学习如何驱动一个解析生成器，像`yacc`或引入外部依赖，所以 GoAWK 的解析器是用爱，手工制作的。
 
-AST 节点是简单的 Go 结构，每个表达式和语句结构都实现`Expr`和`Stmt`作为接口。AST 节点也可以通过调用`String()`方法来自行打印 - 这对于调试解析器非常有用，您可以命令行上指定`-d`，启用它：
+AST 节点是简单的 Go 结构，每个表达式和语句结构分别实现`Expr`和`Stmt`作为接口。AST 节点也可调用`String()`方法，好看格式打印自身 - 这对于调试解析器非常有用，您可以命令行上指定`-d`，启用它：
 
 ```bash
 $ goawk -d 'BEGIN { x=4; print x+3; }'
@@ -238,12 +238,12 @@ BEGIN {
 
 ```
 
-AWK 语法在某些地方有点古怪，其中最重要的是`print`语句中，不支持表达式`>`或`|`(除括号内)。这些应该能使重定向或管道输出更简单。
+AWK 语法在某些地方有点古怪，其中最重要的是`print`语句中，不支持表达式`>`或`|`(除括号内)。这些若支持，应该能使重定向或管道输出更简单吧。
 
-- `print x > y`表示打印变量`x`重定向到具有名称的文件`y`
-- `print (x > y)`表示 打印 布尔:true（1），若`x`大于`y`
+- `print x > y`: 表示 打印变量`x`重定向到具有`y`名称的文件
+- `print (x > y)`: 表示 打印 布尔:true（1），若`x`大于`y`
 
-我无法想出一个更好的方法来做，两个这个深度递归树路径 - `expr()`和`printExpr()`在代码中：
+我无法想出一个更好的方式，来完成两种深度递归树的路径方法 - `expr()`和`printExpr()`在代码中：
 
 ```go
 func (p *parser) expr() Expr      { return p.getLine() }
@@ -251,7 +251,7 @@ func (p *parser) printExpr() Expr { return p._assign(p.printCond) }
 
 ```
 
-特别解析内置函数调用，以便在解析时，检查参数的数量（在某些情况下是类型）。例如，解析`match(str, regex)`：
+内置的函数调用是需要指定解析类别的，这样在解析时，可检查参数的数量（在某些情况下是类型）。例如，在解析`match(str, regex)`时：
 
 ```go
 case F_MATCH:
@@ -265,7 +265,7 @@ case F_MATCH:
 
 ```
 
-许多解析函数提出，无效语法或意外标记的错误。不在每一步都检查这些错误，使生活更容易的是`panic`后，在顶层的特定的`ParseError`类型，才`recover`。这避免了深度递归代码中的大量重复错误处理。以下是顶级`ParseProgram`函数：
+许多解析函数会提出，无效语法或意外标记的错误。而我不会在每一步都检查这些错误，让生活更容易的方式是，在`panic`后，在顶层`recover(恢复)`制定的`ParseError`类型。这避免了深度递归代码中的大量重复错误处理。以下是顶层`ParseProgram`函数：
 
 ```go
 func ParseProgram(src []byte, config *ParserConfig) (
@@ -283,13 +283,13 @@ func ParseProgram(src []byte, config *ParserConfig) (
 
 ### 分解器
 
-该[分解器](https://github.com/benhoyt/goawk/blob/master/parser/resolve.go)实际上是解析器包的一部分。它对数组和标量进行基本类型检查，并为所有变量引用分配整数索引（以避免执行时，较慢的映射查找）。
+该[分解器](https://github.com/benhoyt/goawk/blob/master/parser/resolve.go)实际上是解析器包的一部分。它对数组和标量(scalars)进行基本类型检查，并为所有变量引用分配整数索引（以避免执行时，较慢的映射查找）。
 
-我认为我完成分解器的方式是非传统的：解析器不是对 AST 进行完整传递，而仅记录分解器找出类型（函数调用和变量引用列表）所需的内容。这可能比走遍整棵树更快，但它也可能使代码不那么简单。
+我认为我完成分解器的方式是非传统的：解析器不是对 AST 进行完整传递，而仅记录分解器找出的类型（函数调用和变量引用的列表）所需的内容。这可能比走遍整棵树更快，但它也可能使代码不那么直接利落。
 
 事实上，分解器是我写了一段时间的代码之一。这是我 对 GoAWK 不太满意的的一部分。它有效，但它很混乱，我仍然不确定我是否覆盖了所有边缘情况。
 
-复杂性来自这样一个事实，即在调用函数时，您不知道调用点的参数是，顺序参数还是数组。您必须仔细阅读被调用函数中的类型（并且可能在它调用的函数中）以确定它。考虑这个 AWK 程序：
+复杂性来自这样一个事实，即在调用函数时，您不知道调用点上的参数是，标量还是数组。您必须仔细阅读被调用函数中的类型（并且可能在它调用的函数中）以确定它。考虑这个 AWK 程序：
 
 ``` go
 function g(b, y) { return f(b, y) }
@@ -298,21 +298,21 @@ BEGIN { c[1]=2; print f(c, 1); print g(c, 1) }
 
 ```
 
-该程序只打印`2`,两次。但是当我们在`g`里面调用`f`时，我们还不知道参数的类型。这是解析器工作的一部分，以迭代的方式解决这个问题。（参见[`resolveVars`](https://github.com/benhoyt/goawk/blob/a75cecd04d8aa8829c04b97bf370c8afaf53a68e/parser/resolve.go#L223)，在`resolve.go`）。
+该程序只打印`2`,两次。但是当我们在`g`里面调用`f`时，我们还不知道参数的类型。这是分解器工作的一部分，它用迭代的方式解决了这个问题。（参见[`resolveVars`](https://github.com/benhoyt/goawk/blob/a75cecd04d8aa8829c04b97bf370c8afaf53a68e/parser/resolve.go#L223)，在`resolve.go`）。
 
-找出未知参数类型后，解析器将整数索引分配给所有变量引用，全局和局部。
+找出未知参数类型后，解析器将整数索引，分配给所有的变量引用，全局和局部。
 
 ### 解释器
 
-解释器是一个简单的围绕虚拟树解释器。解释器实现，`语句执行和表达式求值，输入/输出，函数调用和基本值类型`。
+解释器是一个简单的(tree-walk)爬树解释器。解释器实现了，`语句执行和表达式求值(评估)，输入/输出，函数调用和基本值类型`。
 
-- *语句执行*开始在[interp.go](https://github.com/benhoyt/goawk/blob/master/interp/interp.go)的`ExecProgram`，这需要一个解析了的`Program`，建立起解释器，然后执行`BEGIN`块，模式和动作，和`END`块。执行操作包括评估模式表达式，并确定它们是否与当前行匹配。其中包括“范围模式” `NR==4, NR==10`，它匹配开始和停止模式之间的行。
+- *语句执行*开始在[interp.go](https://github.com/benhoyt/goawk/blob/master/interp/interp.go)的`ExecProgram`，这需要一个解析了的`Program`，建立起解释器，然后执行`BEGIN`块，模式和动作，和`END`块。执行操作包括评估模式表达式，并确定它们是否与当前行匹配。其中包括“范围range-模式” `NR==4, NR==10`，它匹配开始和停止模式之间的行。
 
-语句由`execute`方法执行，该方法采用任何类型的一个`Stmt`，在其`switch`上执行大型类型'认亲'活动，以确定它是什么类型的语句，并执行该语句的行为。
+一个语句由`execute`方法执行，该方法获取任何类型的一个`Stmt`，在其`switch`上执行大型类型'认亲'活动，以确定它是什么类型的语句，并执行该语句的行为。
 
 - *表达式求值*以相同的方式工作，除了它发生在`eval`方法中，它接受`Expr`，并 switch 到表达式类型。
 
-大多数二进制表达式（除短路的`&&`和`||`）都通过`evalBinary`进行求值，其中包含对运算符标记的进一步 switch，如下所示：
+大多数二进制表达式（除短路的`&&`和`||`）都可通过`evalBinary`进行求值，其中包含对运算符标记的进一步 switch，如下所示：
 
 ```go
 func (p *interp) evalBinary(op Token, l, r value) (value, error) {
@@ -332,13 +332,13 @@ func (p *interp) evalBinary(op Token, l, r value) (value, error) {
 
 ```
 
-在`EQUALS`这种情况下，您可以看到 AWK 的“字符串类型”特性：如果任一操作数绝对是“真正的字符串”（来自用户输入的非数字字符串），请进行字符串比较，否则进行数字比较。这意味着像`$3 == "foo"`是字符串比较，但`$3 == 3.14`做一个数字比较，这是你所期望的。
+在`EQUALS`这种情况下，您可以看到 AWK 的“字符串类型”特性：如果任一操作数绝对是“真正的字符串”（来自用户输入的非数字字符串），请进行字符串比较，否则进行数字比较。这意味着像`$3 == "foo"`是字符串比较，但`$3 == 3.14`是一个数字比较，这正是想你所想。
 
 AWK 的关联数组很好地映射到了 Go 的`map[string]value`类型，因此可以轻松实现这些。说到这个，Go 的垃圾收集器意味着我们不必担心编写自己的 GC。
 
 - *输入和输出*在[io.go 中](https://github.com/benhoyt/goawk/blob/master/interp/io.go)处理。所有 I/O 都经过缓冲以提高效率，我们使用 Go 的`bufio.Scanner`来读取输入记录和`bufio.Writer`缓冲输出。
 
-输入记录通常是行（`Scanner`默认行为），但记录分隔符`RS`也可以设置为要拆分的另一个字符，或者设置为空字符串，这意味着可在两个连续的换行符（空行）上，进行拆分以处理多行记录。这些方法仍使用`bufio.Scanner`，但使用自定义拆分函数，例如：
+输入记录通常是行（`Scanner`默认行为），但记录的分隔符`RS`也可以设置为要拆分的另一个字符，或者设置为空字符串，这意味着可在两个连续的换行符（空行）上，进行拆分以处理多行记录。这些方法仍使用`bufio.Scanner`，但使用了自定义拆分函数，例如：
 
 ```go
 // 拆分函数，用于拆分给定分隔符字节上的记录
@@ -369,11 +369,13 @@ func (s byteSplitter) scan(data []byte, atEOF bool)
 
 - *调用的函数*在[functions.go](https://github.com/benhoyt/goawk/blob/master/interp/functions.go)中实现，包括内置函数和用户定义函数。
 
-该`callBuiltin`方法再次使用一个大的 switch 语句，来确定我们正在调用的 AWK 函数，例如`split()`或`sqrt()`。内置`split`函数需要特殊处理，因为它需要一个未计算的数组参数。类似地，`sub`，`gsub`实际上采用分配到的“左值”参数。对于其余的函数，我们首先评估参数并执行操作。
+该`callBuiltin`方法再次使用一个大的 `switch` 语句，来确定我们正在调用的 AWK 函数，例如`split()`或`sqrt()`。内置`split`函数需要特殊处理，因为它获取一个未评估的数组参数。类似地，`sub`，`gsub`实际上采用分配到的“(lvalue)左值”参数。对于其余的函数，我们首先评估参数才执行操作。
 
-大多数函数都是使用 Go 标准库的一部分实现的。例如，所有数学函数都`sqrt()`使用标准`math`包，`split()`用到了`strings`和`regexp`函数。GoAWK 重新使用 Go 的正则表达式，因此模糊的正则表达式语法可能与“one true awk”的行为不同。
+> 译曰: lvalue 的意思，应该是也被特效处理了
 
-说到正则表达式，我使用简单的有界缓存来缓存正则表达式的编译，这足以加速几乎所有的 AWK 脚本：
+大多数函数都是使用 Go 标准库的一部分实现的。例如，所有数学函数，像`sqrt()`是使用标准`math`包，`split()`用到了`strings`和`regexp`函数。GoAWK 重新使用 Go 的正则表达式，因此模糊正则表达式语法可能与“one true awk”的行为不同。
+
+说到正则表达式，我使用简单的有界缓存，来缓存正则表达式的编译，这足以加速几乎所有的 AWK 脚本：
 
 ```go
 // 编译正则表达式字符串（或从正则表达式缓存中获取）
@@ -394,14 +396,14 @@ func (p *interp) compileRegex(regex string) (*regexp.Regexp, error) {
 
 ```
 
-我也对 AWK 的`printf`声明作弊了，将 AWK 格式的字符串和类型转换为 Go 类型，这样我就可以重用 Go 的`fmt.Sprintf`函数了。同样，缓存此转换的格式字符串。
+我也对 AWK 的`printf`语句作弊了，将 AWK 格式的字符串和类型转换为 Go 类型，这样我就可以重用 Go 的`fmt.Sprintf`函数了。同样，缓存此转换的格式字符串。
 
-用户定义的调用使用`callUser`，它评估函数的参数，并将它们推送到本地堆栈。这比你想象的要复杂得多，原因有二：
+用户定义，是调用了`callUser`，它会评估函数的参数，并将它们推送到本地堆栈。这比你想象的要复杂得多，原因有二：
 
 - 首先，你可以将数组作为参数传递（通过引用），
 - 其次，你可以调用一个，输入参数少于规定参数的函数。
 
-它还检查调用深度（当前最大值为 1000），以避免在无限递归的panic。
+它还检查调用深度（当前最大值为 1000），以避免无限递归的panic。
 
 - *基本值类型*实现在[value.go](https://github.com/benhoyt/goawk/blob/master/interp/value.go)。GoAWK 值是字符串或数字（或“数字字符串”），并使用`value`，这个值传递的结构，其定义如下：
 
@@ -415,9 +417,9 @@ type value struct {
 
 ```
 
-本来我做出了 GoAWK 值类型的`interface{}`，用它来持有`string`和`float64`。但你无法分辨常规字符串和数字字符串之间的区别，所以才决定使用结构。我的预感是，通过，值传递一个小的 4字 结构，比指针传递更好，所以这就是我所做的（虽然我没有验证）。
+一开始我是，让 GoAWK 值为`interface{}`类型，用它来持有`string`和`float64`。但你无法分辨常规字符串和数字字符串之间的区别，所以才决定使用结构。我的预想是，通过，值传递一个小的 4字(4-word) 结构，比指针传递更好，所以这就是我所做的（虽然我没有验证）。
 
-要检测“数字字符串”（请参阅 ​​`numStr`），我们只简单修剪空格，并使用 Go 的`strconv.ParseFloat`函数。但是，当字符串值使用`value.num()`显式转换为数字时，我不得不自力更生，'卷'自己的解析函数，因为这些转换允许`"1.5foo"`这样的事情，而`ParseFloat`不能。
+要检测“数字字符串”（请参阅 ​​`numStr`），我们只是简单修剪(trim)了空格，并使用 Go 的`strconv.ParseFloat`函数。但是啊，当字符串值使用`value.num()`显式转换为数字时，就出现了转换是允许`"1.5foo"`这样的，而`ParseFloat`却不能这样。无奈，我不得不自力更生，'卷'好自己的解析函数。
 
 ### 主程序
 
