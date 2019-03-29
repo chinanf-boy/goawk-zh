@@ -21,10 +21,9 @@
 <!-- repo = 'benhoyt/goawk' -->
 <!-- commit = 'a75cecd04d8aa8829c04b97bf370c8afaf53a68e' -->
 <!-- time = '2018-11-17' -->
-
-| 翻译的原文 | 与日期        | 最新更新 | 更多                       |
-| ---------- | ------------- | -------- | -------------------------- |
-| [commit]   | ⏰ 2018-11-17 | ![last]  | [中文翻译][translate-list] |
+翻译的原文 | 与日期 | 最新更新 | 更多
+---|---|---|---
+[commit] | ⏰ 2018-11-17 | ![last] | [中文翻译][translate-list]
 
 [last]: https://img.shields.io/github/last-commit/benhoyt/goawk.svg
 [commit]: https://github.com/benhoyt/goawk/tree/a75cecd04d8aa8829c04b97bf370c8afaf53a68e
@@ -47,7 +46,7 @@
 
 ## 生活
 
-[help me live , live need money 💰](https://github.com/chinanf-boy/live-need-money)
+[If help, **buy** me coffee —— 营养跟不上了，给我来瓶营养快线吧! 💰](https://github.com/chinanf-boy/live-need-money)
 
 ---
 
